@@ -4,6 +4,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
+    DVAlgController.cpp \
     Messages/Packet.cpp \
     Messages/RoutingMessage.cpp \
     Nodes/AbstractNode.cpp \
@@ -12,6 +13,7 @@ SOURCES += \
     main.cpp
 
 HEADERS += \
+    DVAlgController.h \
     Messages/AbstractNetMessage.h \
     Messages/Packet.h \
     Messages/RoutingMessage.h \

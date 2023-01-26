@@ -27,10 +27,14 @@ private:
         std::chrono::time_point<std::chrono::system_clock> startTime = std::chrono::system_clock::now();
         std::thread sleepingThread;
     };
+    shared_ptr<DVAlgController> m_algController;
     std::vector<DownLinkTask> m_downLinkTasks;
     RouterMap_t m_routers;
     HostMap_t m_hosts;
 public:
+    Network()
+        : m_algController(DVAlgController::getInstance())
+    {}
     void addHost(const string& addr)
     {
         if(m_routers.contains(addr) || m_hosts.contains(addr))
@@ -52,7 +56,7 @@ public:
     }
 
     void addLink(const string& addr1,
-                 const string addr2,
+                 const string& addr2,
                  uint64_t cost)
     {
         if(!m_routers.contains(addr1) && !m_hosts.contains(addr1))
@@ -74,13 +78,16 @@ public:
             m_hosts[addr1]->addToRouterLink(m_routers[addr2], cost);
             m_routers[addr2]->addToHostLink(m_hosts[addr1], cost);
         }
-        if(m_hosts.contains(addr2))
+        else if(m_hosts.contains(addr2))
         {
             m_hosts[addr2]->addToRouterLink(m_routers[addr1], cost);
             m_routers[addr1]->addToHostLink(m_hosts[addr2], cost);
         }
-        m_routers[addr1]->addToRouterLink(m_routers[addr2], cost);
-        m_routers[addr2]->addToRouterLink(m_routers[addr1], cost);
+        else
+        {
+            m_routers[addr1]->addToRouterLink(m_routers[addr2], cost);
+            m_routers[addr2]->addToRouterLink(m_routers[addr1], cost);
+        }
     }
 
     void updateLinkCost(const string& addr1,
@@ -130,7 +137,23 @@ public:
 
     void run()
     {
+        for(auto& pair : m_hosts)
+            pair.second->startNode();
+        for(auto& pair : m_routers)
+            pair.second->startNode();
+    }
 
+    void waitForConverge()
+    {
+        while (true)
+        {
+            if(m_algController->counter())
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            else
+                break;
+        }
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(m_algController->getEndTime()-m_algController->getStartTime());
+        std::cout << "Convergence Time:: " << duration.count()<< " milliseconds" << std::endl;
     }
 
     void draw()
@@ -188,5 +211,10 @@ public:
             else
                 return 0;
         }
+    }
+
+    ~Network()
+    {
+        std::cout << "destroying network" << std::endl;
     }
 };

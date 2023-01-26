@@ -9,65 +9,72 @@ void runProgram()
     std::string command;
     Network network;
     while (true) {
-        std::getline(std::cin, command);
-        std::stringstream commandStream(command);
+        cout << ">> ";
+        getline(std::cin, command);
+        stringstream commandStream(command);
 
-        std::string firstWord;
+        string firstWord;
         commandStream >> firstWord;
         if(firstWord == "add") // add
         {
             string secondWord;
-            getline(commandStream, secondWord, ' ');
+            commandStream >> secondWord;
             if(secondWord == "host")
             {
                 string nodeAddr;
-                while (getline(commandStream, nodeAddr, ' ')) {
+                while (true) {
+                    commandStream >> nodeAddr;
                     network.addHost(nodeAddr);
+                    if(commandStream.tellg() == -1)
+                        break;
                 }
             }
             else if(secondWord == "router")
             {
                 string nodeAddr;
-                while (getline(commandStream, nodeAddr, ' ')) {
+                while (true) {
+                    commandStream >> nodeAddr;
                     network.addRouter(nodeAddr);
+                    if(commandStream.tellg() == -1)
+                        break;
                 }
             }
             else if(secondWord == "link")
             {
-                string firstAddr, secondAddr;
+                string addr1, addr2;
                 uint64_t cost;
-                commandStream >> firstAddr >> secondAddr >> cost;
-
+                commandStream >> addr1 >> addr2 >> cost;
+                network.addLink(addr1, addr2, cost);
             }
         }
         else if(firstWord == "update") // update
         {
-            string secondWord;
-            commandStream >> secondWord; // link
-            if(secondWord != "link")
-            {
-                cout << "unknown command";
-                continue;
-            }
-            string addr1, addr2;
-            uint64_t costOrSd, td;
-            commandStream >> addr1 >> addr2 >> costOrSd;
-            if(commandStream.tellg())
-            {
-                network.updateLinkCost(addr1, addr2, costOrSd);
-            }
-            else
-            {
-                commandStream >> td;
-                network.temporarilyDownLink(addr1, addr2, costOrSd, td);
-            }
+//            string secondWord;
+//            commandStream >> secondWord; // link
+//            if(secondWord != "link")
+//            {
+//                cout << "unknown command";
+//                continue;
+//            }
+//            string addr1, addr2;
+//            uint64_t costOrSd, td;
+//            commandStream >> addr1 >> addr2 >> costOrSd;
+//            if(commandStream.tellg() == -1)
+//            {
+//                network.updateLinkCost(addr1, addr2, costOrSd);
+//            }
+//            else
+//            {
+//                commandStream >> td;
+//                network.temporarilyDownLink(addr1, addr2, costOrSd, td);
+//            }
 
         }
         else if(firstWord == "remove") // remove
         {
-            string addr1, addr2;
-            commandStream >> addr1 >> addr2;
-            network.removeLink(addr1, addr2);
+//            string addr1, addr2;
+//            commandStream >> addr1 >> addr2;
+//            network.removeLink(addr1, addr2);
         }
         else if(firstWord == "log")
         {
@@ -77,7 +84,9 @@ void runProgram()
         }
         else if(firstWord == "run")
         {
+            string secondWord;
             network.run();
+            network.waitForConverge();
         }
         else if(firstWord == "draw")
         {
@@ -94,21 +103,12 @@ void runProgram()
             std::cout << "Unknown command. try again" << std::endl;
         }
     }
+    cout << "editing runProgram function" << endl;
 }
 
 
 int main()
 {
-    stringstream ss("test1 test2");
-    string s;
-    cout << ss.tellg() << endl;
-    ss >> s;
-    cout << s << endl;
-    cout << ss.tellg() << endl;
-    ss >> s;
-    cout << s << endl;
-    cout << ss.tellg() << endl;
-    ss >> s;
-    cout << s << endl;
+    runProgram();
     return 0;
 }

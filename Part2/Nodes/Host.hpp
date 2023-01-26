@@ -6,27 +6,24 @@
 #include "AbstractNode.hpp"
 #include "../Messages/RoutingMessage.h"
 #include "../Messages/Packet.h"
-
+#include "../DVAlgController.h"
 class Host : public AbstractNode
 {
-
+    shared_ptr<DVAlgController> m_algController;
 public:
     Host(const string &addr);
-
+    Host(const Host& other) = delete;
+    Host& operator=(const Host& other) = delete;
 
 
     // AbstractNode interface
 public:
     void startNode() override;
-    void addToRouterLink(shared_ptr<Router> router, uint64_t cost) override;
-    void addToHostLink(shared_ptr<Host> host, uint64_t cost) override;
-    void updateToRouteLink(shared_ptr<Router> router, uint64_t cost) override;
-    void updateToHostLink(shared_ptr<Host> host, uint64_t cost) override;
     void takeMessage(shared_ptr<AbstractNetMessage> message) override;
     NodeType getType() override;
 private:
     void handleNewMessage(shared_ptr<AbstractNetMessage> message);
-    void updateRoutingTable(shared_ptr<RoutingMessage> message);
+    void handlePacket(shared_ptr<Packet> packet);
 };
 
 
