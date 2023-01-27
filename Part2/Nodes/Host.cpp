@@ -4,7 +4,7 @@
 
 
 Host::Host(const string &addr)
-    : AbstractNode(addr), m_algController(DVAlgController::getInstance())
+    : AbstractNode(addr), m_algController(NetworkController::getInstance())
 {
 
 }
@@ -12,12 +12,19 @@ Host::Host(const string &addr)
 void Host::startNode()
 {
     m_thread = std::thread([this](){
-//        this->isRunning
-        while (true) {
+        this->m_isRunning = true;
+        m_algController->incRunningNodeCounter();
+        while (true)
+        {
             shared_ptr<AbstractNetMessage> message;
             this->m_nodeQueue.wait_dequeue(message);
+            if(m_mustStop)
+                break;
             this->handleNewMessage(std::move(message));
         }
+        m_mustStop = false;
+        m_isRunning = false;
+        m_algController->decRunningNodeCounter();
     });
 }
 
@@ -30,7 +37,7 @@ void Host::handleNewMessage(shared_ptr<AbstractNetMessage> message)
             auto routingMessage = std::dynamic_pointer_cast<RoutingMessage>(message);
             auto betweenNodeCost = m_links[routingMessage->getSender()->getAddr()].cost;
             updateRoutingTable(routingMessage->getDestination(), routingMessage->getCost()+betweenNodeCost, routingMessage->getSender());
-            m_algController->dec();
+            m_algController->decConvergeCounter();
             break;
         }
         case AbstractNetMessage::PACKET:
@@ -50,13 +57,7 @@ void Host::handleNewMessage(shared_ptr<AbstractNetMessage> message)
 
 void Host::handlePacket(shared_ptr<Packet> packet)
 {
-    std::cout << "A packet with body size of " << packet->getBody().size() << " received" << std::endl;
-    // TODO
-}
 
-void Host::takeMessage(shared_ptr<AbstractNetMessage> message)
-{
-    m_nodeQueue.enqueue(std::move(message));
 }
 
 AbstractNode::NodeType Host::getType()

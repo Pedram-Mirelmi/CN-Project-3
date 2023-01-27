@@ -13,12 +13,29 @@ AbstractNode::AbstractNode(const string& addr)
 
 AbstractNode::~AbstractNode()
 {
-    std::cout << "destroying " << getAddr() << std::endl;
+    std::cout << "destroying " << m_addr << std::endl;
 }
 
 const AbstractNode::string &AbstractNode::getAddr() const
 {
     return m_addr;
+}
+
+void AbstractNode::stopNode()
+{
+    m_mustStop = true;
+    m_nodeQueue.enqueue({});
+
+
+}
+
+void AbstractNode::clearQueue()
+{
+    for(size_t i = 0; i < m_nodeQueue.size_approx(); i++)
+    {
+        shared_ptr<AbstractNetMessage> ptr;
+        m_nodeQueue.try_dequeue(ptr);
+    }
 }
 
 void AbstractNode::addToRouterLink(shared_ptr<Router> router, uint64_t cost)
@@ -49,6 +66,12 @@ bool AbstractNode::updateRoutingTable(const string &dest, uint64_t cost, shared_
         return true;
     }
     return false;
+}
+
+void AbstractNode::takeMessage(shared_ptr<AbstractNetMessage> message)
+{
+    if(!m_mustStop)
+        m_nodeQueue.enqueue(message);
 }
 
 const AbstractNode::RoutingTable_t &AbstractNode::getRoutingTable() const

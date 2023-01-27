@@ -1,13 +1,13 @@
 #include "Packet.h"
 
-Packet::Packet(const std::vector<char>& body, const std::string& source, const std::string& destination)
-    : m_body(body), m_source(source), m_destination(destination)
+Packet::Packet(bool isAck, const std::vector<char>& body, const std::string& source, const std::string& destination)
+    : m_isAck(isAck), m_body(body), m_source(source), m_destination(destination)
 {
 
 }
 
-Packet::Packet(std::vector<char> &&body, const std::string& source, const std::string& destination)
-    :m_body(std::move(body)), m_source(source), m_destination(destination)
+Packet::Packet(bool isAck, std::vector<char> &&body, const std::string& source, const std::string& destination)
+    : m_isAck(isAck), m_body(std::move(body)), m_source(source), m_destination(destination)
 {
 
 }
@@ -31,7 +31,6 @@ void Packet::setDestination(const std::string &newDestination)
 {
     m_destination = newDestination;
 }
-
 
 const std::vector<char> &Packet::getBody() const
 {

@@ -98,6 +98,12 @@ void runProgram()
             commandStream >> secondWord >> addr;
             network.showTables(addr);
         }
+        else if(firstWord == "shut")
+        {
+            string secondWord;
+            commandStream >> secondWord;
+            network.shutDown();
+        }
         else
         {
             std::cout << "Unknown command. try again" << std::endl;

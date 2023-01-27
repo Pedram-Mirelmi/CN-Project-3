@@ -5,14 +5,14 @@
 #include "AbstractNode.hpp"
 #include "../Messages/RoutingMessage.h"
 #include "../Messages/Packet.h"
-#include "../DVAlgController.h"
+#include "../NetworkController.h"
 
 
 using std::make_shared;
 
 class Router : public AbstractNode
 {
-    shared_ptr<DVAlgController> m_algController;
+    shared_ptr<NetworkController> m_algController;
 public:
     Router(const string &addr);
     Router(const Router& other) = delete;
@@ -22,7 +22,6 @@ public:
 public:
     void startNode() override;
     bool updateRoutingTable(const string& dest, uint64_t cost, shared_ptr<AbstractNode> nextHop) override;
-    void takeMessage(shared_ptr<AbstractNetMessage> message) override;
     NodeType getType() override;
 private:
     void handleNewMessage(shared_ptr<AbstractNetMessage> message);

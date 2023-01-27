@@ -8,11 +8,12 @@ using std::shared_ptr;
 
 class Router;
 class Host;
-
+class Network;
 
 
 class AbstractNode : public std::enable_shared_from_this<AbstractNode>
 {
+    friend class Network;
 public:
     using string = std::string;
     struct RoutingTableEntry
@@ -52,7 +53,7 @@ protected:
 
     string m_addr;
     std::thread m_thread;
-    bool isRunning;
+    bool m_isRunning = false, m_mustStop = false;
     moodycamel::BlockingConcurrentQueue<shared_ptr<AbstractNetMessage>> m_nodeQueue;
 public:
     enum NodeType {ROUTER, HOST};
@@ -63,6 +64,8 @@ public:
     ~AbstractNode();
     virtual const string &getAddr() const;
     virtual void startNode() = 0;
+    virtual void stopNode();
+    virtual void clearQueue();
 
     virtual void addToRouterLink(shared_ptr<Router> router, uint64_t cost);
     virtual void addToHostLink(shared_ptr<Host> host, uint64_t cost);
@@ -72,7 +75,7 @@ public:
 
     virtual bool updateRoutingTable(const string& dest, uint64_t cost, shared_ptr<AbstractNode> nextHop);
 
-    virtual void takeMessage(shared_ptr<AbstractNetMessage> message) = 0;
+    virtual void takeMessage(shared_ptr<AbstractNetMessage> message);
 
     virtual NodeType getType() = 0;
     const RoutingTable_t &getRoutingTable() const;
