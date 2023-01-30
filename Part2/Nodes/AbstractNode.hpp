@@ -54,11 +54,12 @@ protected:
     string m_addr;
     std::thread m_thread;
     bool m_isRunning = false, m_mustStop = false;
+    bool m_isBufferLimited;
     moodycamel::BlockingConcurrentQueue<shared_ptr<AbstractNetMessage>> m_nodeQueue;
 public:
     enum NodeType {ROUTER, HOST};
 public:
-    AbstractNode(const string& addr);
+    AbstractNode(const string& addr, bool limitedBuffer = false, uint64_t bufferLimit = -1);
 //    AbstractNode(const AbstractNode& other) = delete;
 //    AbstractNode& operator=(const AbstractNode& other) = delete;
     ~AbstractNode();

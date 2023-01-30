@@ -121,13 +121,12 @@ void Network::shutDown()
 
     std::cout << "Network shut down" << std::endl;
 
+#ifdef NETWORK_DEBUGGING
     for(auto& pair : m_hosts)
         std::cout << pair.first << ": " << pair.second->m_nodeQueue.size_approx() << std::endl;
     for(auto& pair : m_routers)
         std::cout << pair.first << ": " << pair.second->m_nodeQueue.size_approx() << std::endl;
-
-
-
+#endif
 }
 
 void Network::waitForConverge()

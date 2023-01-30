@@ -4,6 +4,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
+    Messages/HandShake.cpp \
     Messages/Packet.cpp \
     Messages/RoutingMessage.cpp \
     Network.cpp \
@@ -18,6 +19,7 @@ SOURCES += \
 
 HEADERS += \
     Messages/AbstractNetMessage.h \
+    Messages/HandShake.h \
     Messages/Packet.h \
     Messages/RoutingMessage.h \
     Network.h \

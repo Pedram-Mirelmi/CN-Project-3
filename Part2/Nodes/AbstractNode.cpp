@@ -4,11 +4,13 @@
 #include "Host.hpp"
 
 
-AbstractNode::AbstractNode(const string& addr)
+AbstractNode::AbstractNode(const string& addr, bool limitedBuffer, uint64_t bufferLimit)
     : std::enable_shared_from_this<AbstractNode>(),
-      m_addr(addr)
+      m_addr(addr),
+      m_isBufferLimited(limitedBuffer)
 {
-
+    if(m_isBufferLimited)
+        m_nodeQueue = moodycamel::BlockingConcurrentQueue<shared_ptr<AbstractNetMessage>>(bufferLimit);
 }
 
 AbstractNode::~AbstractNode()
@@ -25,8 +27,6 @@ void AbstractNode::stopNode()
 {
     m_mustStop = true;
     m_nodeQueue.enqueue({});
-
-
 }
 
 void AbstractNode::clearQueue()
@@ -71,7 +71,10 @@ bool AbstractNode::updateRoutingTable(const string &dest, uint64_t cost, shared_
 void AbstractNode::takeMessage(shared_ptr<AbstractNetMessage> message)
 {
     if(!m_mustStop)
+    {
+
         m_nodeQueue.enqueue(message);
+    }
 }
 
 const AbstractNode::RoutingTable_t &AbstractNode::getRoutingTable() const

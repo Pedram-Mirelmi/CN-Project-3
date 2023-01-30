@@ -8,6 +8,8 @@
 #include "./Nodes/Host.hpp"
 #include "./Nodes/Router.hpp"
 
+#define NETWORK_DEBUGGING
+
 using std::shared_ptr;
 using std::make_shared;
 class Network
