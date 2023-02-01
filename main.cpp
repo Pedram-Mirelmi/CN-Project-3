@@ -112,9 +112,36 @@ void runProgram()
     cout << "editing runProgram function" << endl;
 }
 
-
 int main()
 {
-    runProgram();
+//    runProgram();
+    int temp;
+    moodycamel::BlockingConcurrentQueue<int> q;
+    auto timeout = std::thread([&](){
+         if(q.wait_dequeue_timed(temp, std::chrono::seconds(2)))
+             std::cout << "output true!" << std::endl;
+         else
+             std::cout << "output false" << std::endl;
+    });
+
+
+    q.enqueue(1);
+
+
+
+    std::cin.get();
+    std::cout << temp << std::endl;
+    timeout.join();
+
     return 0;
 }
+
+
+
+
+
+
+
+
+
+

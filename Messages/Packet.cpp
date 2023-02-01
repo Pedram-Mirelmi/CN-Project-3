@@ -40,6 +40,11 @@ void Packet::setDestination(const std::string &newDestination)
     m_destination = newDestination;
 }
 
+void Packet::switchAddresses()
+{
+    std::swap(m_source, m_destination);
+}
+
 const std::vector<char> &Packet::getBody() const
 {
     return m_body;
@@ -65,7 +70,7 @@ void Packet::setIsAck(bool newIsAck)
     m_isAck = newIsAck;
 }
 
-uint16_t Packet::packetId() const
+uint16_t Packet::getPacketId() const
 {
     return m_packetId;
 }

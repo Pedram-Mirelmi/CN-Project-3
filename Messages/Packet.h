@@ -24,13 +24,13 @@ public:
     const std::string &getDestination() const;
     void setDestination(const std::string &newDestination);
 
-
+    void switchAddresses();
 
     // AbstractNetMessage interface
 public:
     MessageType getMessageType() override;
     bool isAck() const;
     void setIsAck(bool newIsAck);
-    uint16_t packetId() const;
+    uint16_t getPacketId() const;
     void setPacketId(uint16_t newPacketId);
 };

@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <thread>
 #include "../concurrentqueue-master/blockingconcurrentqueue.h"
-#include "../Messages/AbstractNetMessage.h"
+#include "../Messages/Packet.h"
 using std::shared_ptr;
 
 class Router;
@@ -77,6 +77,8 @@ public:
     virtual bool updateRoutingTable(const string& dest, uint64_t cost, shared_ptr<AbstractNode> nextHop);
 
     virtual void takeMessage(shared_ptr<AbstractNetMessage> message);
+
+    virtual void sendPacket(shared_ptr<Packet> packet);
 
     virtual NodeType getType() = 0;
     const RoutingTable_t &getRoutingTable() const;

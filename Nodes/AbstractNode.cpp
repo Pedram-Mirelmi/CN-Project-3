@@ -72,8 +72,20 @@ void AbstractNode::takeMessage(shared_ptr<AbstractNetMessage> message)
 {
     if(!m_mustStop)
     {
-
         m_nodeQueue.enqueue(message);
+    }
+}
+
+void AbstractNode::sendPacket(shared_ptr<Packet> packet)
+{
+    auto& dest = packet->getDestination();
+    if(m_routingTable.contains(dest))
+    {
+        m_routingTable[dest].nextHop->takeMessage(packet);
+    }
+    else
+    {
+        // TODO
     }
 }
 
