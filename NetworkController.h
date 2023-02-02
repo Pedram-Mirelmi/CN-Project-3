@@ -7,12 +7,12 @@ using std::make_shared;
 
 class NetworkController
 {
-    using time_point = std::chrono::system_clock::time_point;
+    using time_point = std::chrono::high_resolution_clock::time_point;
     static shared_ptr<NetworkController> instance;
     NetworkController();
 private:
     uint64_t m_algConvergecounter = 0, m_runningNodeCounter = 0;
-    mutable std::mutex m_algConvergecounterLock, m_runningNodeCounterLock;
+    mutable std::mutex m_algConvergerCounterLock, m_runningNodeCounterLock;
 
     time_point m_startTime, m_endTime;
 

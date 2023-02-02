@@ -67,6 +67,17 @@ bool Router::updateRoutingTable(const string& dest, uint64_t cost, shared_ptr<Ab
     return false;
 }
 
+void Router::takeMessage(shared_ptr<AbstractNetMessage> message)
+{
+    if(!m_mustStop)
+    {
+        if(m_fifoSize == (uint64_t)-1)
+            m_nodeQueue.enqueue(std::move(message));
+        else
+            m_nodeQueue.try_enqueue(std::move(message));
+    }
+}
+
 void Router::broadCastNewLink(string destination, uint64_t updatedCost)
 {
     if(true)
@@ -93,7 +104,28 @@ void Router::routeAndForwardPacket(shared_ptr<Packet> packet)
         std::cout << "Address not found" << std::endl;
         return;
     }
+
+    std::chrono::high_resolution_clock::duration delay;
+    {
+        std::scoped_lock<std::mutex> scopedLock(m_routerLock);
+        delay = m_nanosecDelay;
+    }
+    std::this_thread::sleep_for(m_nanosecDelay);
     m_routingTable[destAddr].nextHop->takeMessage(std::move(packet));
+}
+
+void Router::setDelay(uint64_t nanosecends)
+{
+    std::scoped_lock<std::mutex> scopedLock(m_routerLock);
+    m_nanosecDelay = std::chrono::nanoseconds(nanosecends);
+}
+
+void Router::setFifoSize(u_int64_t size)
+{
+    if(size == -1)
+        m_fifoSize = size;
+    else
+        m_nodeQueue = moodycamel::BlockingConcurrentQueue<shared_ptr<AbstractNetMessage>>(size);
 }
 
 

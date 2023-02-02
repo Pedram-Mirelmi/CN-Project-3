@@ -32,13 +32,13 @@ NetworkController::time_point NetworkController::getAlgEndTime()
 
 void NetworkController::incConvergeCounter()
 {
-    std::scoped_lock<std::mutex> scopedLock(m_algConvergecounterLock);
+    std::scoped_lock<std::mutex> scopedLock(m_algConvergerCounterLock);
     m_algConvergecounter++;
 }
 
 void NetworkController::decConvergeCounter()
 {
-    std::scoped_lock<std::mutex> scopedLock(m_algConvergecounterLock);
+    std::scoped_lock<std::mutex> scopedLock(m_algConvergerCounterLock);
     m_algConvergecounter--;
     if(!m_algConvergecounter)
         m_endTime = std::chrono::system_clock::now();
@@ -46,7 +46,7 @@ void NetworkController::decConvergeCounter()
 
 uint64_t NetworkController::getAlgConvergeCounter() const
 {
-    std::scoped_lock<std::mutex> scopedLock(m_algConvergecounterLock);
+    std::scoped_lock<std::mutex> scopedLock(m_algConvergerCounterLock);
     return m_algConvergecounter;
 }
 

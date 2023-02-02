@@ -99,6 +99,7 @@ void Network::removeLink(const string &addr1, const string &addr2)
 
 void Network::run()
 {
+    m_algController->setStartAlgTime(std::chrono::high_resolution_clock::now());
     for(auto& pair : m_hosts)
         pair.second->startNode();
     for(auto& pair : m_routers)
@@ -138,8 +139,8 @@ void Network::waitForConverge()
         else
             break;
     }
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(m_algController->getAlgEndTime()-m_algController->getAlgStartTime());
-    std::cout << "Convergence Time:: " << duration.count()<< " milliseconds" << std::endl;
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(m_algController->getAlgEndTime()-m_algController->getAlgStartTime());
+    std::cout << "Convergence Time:: " << duration.count()<< " nanoseconds" << std::endl;
 }
 
 void Network::draw()
@@ -176,6 +177,19 @@ void Network::printTable(const AbstractNode::RoutingTable_t &table)
     std::cout << "=======================================================" << std::endl;
 }
 
+void Network::commandToSend(const string &sender, const string &receiver, const std::vector<char> &data, const string &filename)
+{
+    if(m_hosts.contains(sender) && m_hosts.contains(receiver))
+    {
+        auto senderNode = m_hosts[sender];
+        senderNode->sendMessageTo(receiver, data);
+    }
+    else
+    {
+        std::cout << "Unknown sender or receiver address" << std::endl;
+    }
+}
+
 uint64_t Network::findLinkCost(const string &addr1, const string &addr2)
 {
     if(m_hosts.contains(addr1))
@@ -196,6 +210,20 @@ uint64_t Network::findLinkCost(const string &addr1, const string &addr2)
         else
             return 0;
     }
+}
+
+void Network::setRouterDelay(u_int64_t nanoseconds)
+{
+    for(auto& router : m_routers)
+        router.second->setDelay(nanoseconds);
+}
+
+void Network::setRouterFifo(u_int16_t length)
+{
+    shutDown();
+    for(auto& router : m_routers)
+        router.second->setFifoSize(length);
+    run();
 }
 
 Network::~Network()

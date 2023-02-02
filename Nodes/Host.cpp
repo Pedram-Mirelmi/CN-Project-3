@@ -2,6 +2,7 @@
 #include "Host.hpp"
 #include "Router.hpp"
 
+Host::duration Host::initRTT;
 
 Host::Host(const string &addr)
     : AbstractNode(addr), m_algController(NetworkController::getInstance())
@@ -63,5 +64,17 @@ void Host::handlePacket(shared_ptr<Packet> packet)
 AbstractNode::NodeType Host::getType()
 {
     return NodeType::HOST;
+}
+
+void Host::sendMessageTo(const string& receiver, const std::vector<char>& data)
+{
+    if(m_connections.contains(receiver))
+    {
+//        m_connections[receiver].sendMessage(data);
+    }
+    else
+    {
+        m_connections[receiver] = TCPConnection(std::dynamic_pointer_cast<Host>(shared_from_this()), receiver, Host::initRTT);
+    }
 }
 

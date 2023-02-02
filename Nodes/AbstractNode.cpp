@@ -31,11 +31,7 @@ void AbstractNode::stopNode()
 
 void AbstractNode::clearQueue()
 {
-    for(size_t i = 0; i < m_nodeQueue.size_approx(); i++)
-    {
-        shared_ptr<AbstractNetMessage> ptr;
-        m_nodeQueue.try_dequeue(ptr);
-    }
+    m_nodeQueue = moodycamel::BlockingConcurrentQueue<shared_ptr<AbstractNetMessage>>(m_nodeQueue.size_approx());
 }
 
 void AbstractNode::addToRouterLink(shared_ptr<Router> router, uint64_t cost)

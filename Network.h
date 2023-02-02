@@ -70,7 +70,17 @@ public:
 
     void printTable(const AbstractNode::RoutingTable_t& table);
 
+    void commandToSend(const string& sender,
+                       const string& receiver,
+                       const std::vector<char>& data,
+                       const string& filename);
+
     uint64_t findLinkCost(const string& addr1, const string& addr2);
+
+    void setRouterDelay(u_int64_t nanoseconds);
+
+    void setRouterFifo(u_int16_t length);
+
 
     ~Network();
 };
