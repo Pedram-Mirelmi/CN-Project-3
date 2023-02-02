@@ -1,8 +1,9 @@
 #include "TCPConnection.h"
+#include <tuple>
 #include <cstring>
 TCPConnection::TCPConnection(shared_ptr<Host>&& host, const string& endPoint)
-    :m_correspondingHost(host),
-     m_endPoint(endPoint)
+    :m_endPoint(endPoint),
+     m_correspondingHost(host)
 {
 
 }
@@ -21,12 +22,79 @@ void TCPConnection::sendMessage(const std::vector<char> &msgBuffer)
     m_lastPacketAcked = -1;
     m_lastByteSent = 0;
     m_correspondingHost->sendPacket(m_outBuffer[0]);
+    startTimeout(getEstimatedTimeout());
 }
+
+void TCPConnection::startSlowAgain()
+{
+    m_ssthresh = std::max(m_cwnd/2, (uint64_t)1);
+    m_cwnd = 1;
+    m_lastByteSent = m_lastPacketAcked;
+}
+
+void TCPConnection::timeoutBody(std::chrono::duration<long> duration)
+{
+    bool dummy;
+    m_isTimeoutActive = true;
+    if(!m_timeoutNotifier.wait_dequeue_timed(dummy, duration)) // timeout
+    {
+        std::scoped_lock<std::mutex> scopedLock(m_connectionLock);
+        if(m_isTimeoutActive)
+        {
+            startSlowAgain();
+            sendNextWindow();
+            startTimeout(getEstimatedTimeout());
+        }
+    }
+    m_isTimeoutActive = false;
+}
+
+void TCPConnection::startTimeout(std::chrono::duration<long> duration)
+{
+    m_timeoutThreads.push_back(std::thread(&TCPConnection::timeoutBody, this, std::move(duration)));
+}
+
+void TCPConnection::stopTimeout()
+{
+    m_isTimeoutActive = false;
+    m_connectionLock.unlock();
+    m_timeoutNotifier.enqueue(true); // anything
+    m_timeoutNotifier = moodycamel::BlockingConcurrentQueue<bool>();
+    for(auto& t : m_timeoutThreads)
+        t.join();
+    m_timeoutThreads.clear();
+    m_connectionLock.lock();
+}
+
 
 
 void TCPConnection::handleAck(shared_ptr<Packet> packet)
 {
-    if(packet->get)
+    if(m_connectionLock.try_lock())
+    {
+        if(packet->getPacketId() == m_lastPacketAcked + 1) // OK!
+        {
+            m_lastPacketAcked++;
+            if(packet->getPacketId() == m_lastByteSent) // perfect! Next window
+            {
+                if(m_cwnd < m_ssthresh)
+                    m_cwnd = m_cwnd<<1;
+                else
+                    m_cwnd++;
+                stopTimeout();
+                sendNextWindow();
+                startTimeout(getEstimatedTimeout());
+            }
+        }
+        else // lost packet
+        {
+            startSlowAgain();
+            stopTimeout();
+            sendNextWindow();
+            startTimeout(getEstimatedTimeout());
+        }
+        m_connectionLock.unlock();
+    }
 }
 
 void TCPConnection::packetize(const std::vector<char> &wholeMessage)
@@ -54,6 +122,21 @@ void TCPConnection::packetize(const std::vector<char> &wholeMessage)
                 ));
     }
 }
+
+std::chrono::duration<long> TCPConnection::getEstimatedTimeout()
+{
+
+}
+
+void TCPConnection::sendNextWindow()
+{
+    m_lastByteSent += m_cwnd;
+    for(auto i = m_lastPacketAcked; i < m_lastPacketAcked + m_cwnd; i++)
+    {
+        m_correspondingHost->sendPacket(m_outBuffer[i]);
+    }
+}
+
 
 void TCPConnection::handleData(shared_ptr<Packet> packet)
 {

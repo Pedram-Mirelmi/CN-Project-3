@@ -14,13 +14,15 @@ class TCPConnection
 
     std::vector<shared_ptr<Packet>> m_inBuffer, m_outBuffer;
     uint64_t m_lastPacketAcked, m_lastByteSent;
-    std::thread m_timeoutThread;
+    std::vector<std::thread> m_timeoutThreads;
+    moodycamel::BlockingConcurrentQueue<bool> m_timeoutNotifier;
 
 
     std::mutex m_connectionLock;
     shared_ptr<Host> m_correspondingHost;
 
     uint64_t m_currentMessageSize = 0, m_bytesReceivedSoFar = 0;
+    bool m_isTimeoutActive = false;
 public:
     static uint64_t Packet_Size;
 public:
@@ -29,8 +31,14 @@ public:
 
     // when it's sender:
     void sendMessage(const std::vector<char>& msgBuffer);
+    void startSlowAgain();
+    void timeoutBody(std::chrono::duration<long> duration);
+    void startTimeout(std::chrono::duration<long> duration);
+    void stopTimeout();
     void handleAck(shared_ptr<Packet> packet);
     void packetize(const std::vector<char>& wholeMessage);
+    std::chrono::duration<long> getEstimatedTimeout();
+    void sendNextWindow();
 
     // when it's receiver
     void handleData(shared_ptr<Packet> packet);
