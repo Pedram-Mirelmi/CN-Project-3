@@ -170,7 +170,7 @@ The challenge is where whenever we send a window size of packets and start a tim
 ## Question Answering
 
 1. First part
-   1. What is the different between TCP and UDP ? In what cases each one use for?
+   1. What is the different between TCP and UDP ? In what cases each one use for?  
         TCP is a connection-oriented protocol. Connection-orientation means that the communicating devices should establish a connection before transmitting data and should close the connection after transmitting the data. where as UDP is the Datagram-oriented protocol. This is because there is no overhead for opening a connection, maintaining a connection, and terminating a connection. UDP is efficient for broadcast and multicast types of network transmission.  
         TCP is reliable as it guarantees the delivery of data to the destination router but The delivery of data to the destination cannot be guaranteed in UDP.  
         TCP provides extensive error-checking mechanisms. It is because it provides flow control and acknowledgment of data where as UDP has only the basic error checking mechanism using checksums.  
@@ -179,7 +179,7 @@ The challenge is where whenever we send a window size of packets and start a tim
 
         Also TCP is used in Protocols like HTTP, HTTPS, FTP, SMTP and Telnet but UDP is used in Protocols like DNS, DHCP, TFTP, SNMP, RIP, and VoIP. In general Udp is used where you want the best effort to send the data and don't like to be sure that the data is sent like streaming data and ...
 
-   2. What is the pros and cons of Selective Repeate and Go-Back-N? 
+   2. What is the pros and cons of Selective Repeate and Go-Back-N?  
         In Go-Back-N Protocol, if the sent frame are find suspected then all the frames are re-transmitted from the lost packet to the last packet transmitted where as In selective Repeat protocol, only those frames are re-transmitted which are found suspected.
      	Both have the same sender window size but the receiver window size of Go-Back-N 1 but in Selective Repeat it is N.  
         Selective Repeat protocol is more complex than Go-Back-N.  
@@ -190,7 +190,7 @@ The challenge is where whenever we send a window size of packets and start a tim
 
 
 2. Second part
-   1. Is there a better way for updating the tables after the topology?
+   1. Is there a better way for updating the tables after the topology?  
       As we can use a topology change mechanism with the help of BDUP (Bridge Protocol Data Unit) as follow:
       Switch encounters a topology change whenever it detects link status change on one of its interfaces due
       to a link or another switch failure. After detecting topology change within the network it generates a
@@ -209,7 +209,7 @@ The challenge is where whenever we send a window size of packets and start a tim
       address entries by lowering the aging time to the same as the forward delay time and devices which communicate within this time 
       period are retained in the MAC address table while others are flushed out.
 
-   2. What is the difference between LSRP and DVRP?
+   2. What is the difference between LSRP and DVRP?  
       The DVRP It is a dynamic routing algorithm in which each router computes a distance between itself and each possible destination i.e. its immediate neighbors.  
       The router shares its knowledge about the whole network to its neighbors and accordingly updates the table based on its neighbors and it It makes use of Bellman-Ford Algorithm for making routing tables.  
       the problem of this protocol is:
