@@ -94,7 +94,7 @@ void Network::temporarilyDownLink(const string &addr1, const string &addr2, uint
 
 void Network::removeLink(const string &addr1, const string &addr2)
 {
-
+    // TODO
 }
 
 void Network::run()
@@ -139,12 +139,11 @@ void Network::waitForConverge()
 {
     while (true)
     {
-        if(m_algController->getAlgConvergeCounter())
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        else
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        if(!m_algController->getAlgConvergeCounter())
             break;
     }
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(m_algController->getAlgEndTime()-m_algController->getAlgStartTime());
+    auto duration = m_algController->getAlgEndTime()-m_algController->getAlgStartTime();
     std::cout << "Convergence Time:: " << duration.count()<< " nanoseconds" << std::endl;
 }
 
@@ -235,10 +234,18 @@ void Network::setRouterDelay(u_int64_t nanoseconds)
 void Network::setRouterBufferSize(u_int16_t size)
 {
     Router::defaultBufferSize = size;
-    shutDown();
     for(auto& router : m_routers)
         router.second->setBufferSize(Router::defaultBufferSize);
-    run();
+}
+
+void Network::setRouterDropRate(double rate)
+{
+    Router::defaultDropRate = rate;
+}
+
+void Network::setPacketSize(u_int64_t size)
+{
+    TCPConnection::Packet_Size = size;
 }
 
 Network::~Network()

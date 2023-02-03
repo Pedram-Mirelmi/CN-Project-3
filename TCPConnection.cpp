@@ -48,6 +48,8 @@ TCPConnection &TCPConnection::operator=(TCPConnection &&other)
     m_isTimeoutAllowed = other.m_isTimeoutAllowed;
     m_repeatDelay = other.m_repeatDelay;
 
+    m_startTime = other.m_startTime;
+
     m_isOpen = other.m_isOpen;
 
     m_inBuffer = std::move(other.m_inBuffer);
@@ -97,6 +99,7 @@ void TCPConnection::sendMessage(const std::vector<char>& msgBuffer, uint64_t rep
     m_repeatDelay = repeatDelay;
     m_msgBuffer = msgBuffer;
     packetize(msgBuffer);
+    m_startTime = std::chrono::high_resolution_clock::now();
     sendNextWindow();
     m_isTimeoutAllowed = true;
     startTimeout(getEstimatedTimeout());
@@ -290,6 +293,7 @@ void TCPConnection::sendNextWindow()
 void TCPConnection::onDataSentCompletely()
 {
     log("File transmitted Completely!!!!\nRetransmitting in " + std::to_string(m_repeatDelay) + "ns ...");
+    log("Time to send: " + std::to_string((std::chrono::high_resolution_clock::now()-m_startTime).count()) + "ns");
     stopTimeout();
     std::this_thread::sleep_for(std::chrono::nanoseconds(m_repeatDelay));
     sendMessage();
@@ -299,18 +303,15 @@ void TCPConnection::handleData(shared_ptr<Packet> packet)
 {
     log("Handling data from " + packet->getSource() + " id: " + std::to_string(packet->getPacketId()));
     auto& body = packet->getBody();
-    if(packet->getPacketId() == 1)
-    {
-        int a = 5;
-    }
     if(!m_inBuffer.size() && m_bytesReceivedSoFar == 0 && body.size() == 8) // empty buffer: first packet
     {
+        m_startTime = std::chrono::high_resolution_clock::now();
         m_endPoint = packet->getSource();
         m_currentMessageSize = *((uint64_t*)body.data());
         m_numberOfTotalPackets = (m_currentMessageSize/Packet_Size) + (m_currentMessageSize%Packet_Size ? 1 : 0) + 1;
         m_inBuffer.push_back(packet);
     }
-    else if(packet->getPacketId() == (m_receiverLastPacketAcked%maxPacketId)+1) //OK
+    else if(packet->getPacketId() == ((m_receiverLastPacketAcked+1)%maxPacketId)) //OK
     {
         m_inBuffer.push_back(packet);
         m_bytesReceivedSoFar += packet->getBody().size();
@@ -318,7 +319,7 @@ void TCPConnection::handleData(shared_ptr<Packet> packet)
             onNewFileCompletelyReceived();
     }
 
-    if(packet->getPacketId() == m_receiverLastPacketAcked%maxPacketId + 1)
+    if(packet->getPacketId() == (m_receiverLastPacketAcked+1)%maxPacketId )
         m_receiverLastPacketAcked++;
     sendPacketAck(std::move(packet));
 }
@@ -334,10 +335,11 @@ void TCPConnection::sendPacketAck(shared_ptr<Packet> packet)
 void TCPConnection::onNewFileCompletelyReceived()
 {
     log("File received completely!!!");
-    std::ofstream file("./log/" + m_correspondingHost->getAddr() + " from " + m_endPoint, std::ios_base::out);
+    log("Time to receive: " + std::to_string((std::chrono::high_resolution_clock::now()-m_startTime).count()) + "ns");
+    std::ofstream file("./log/" + m_correspondingHost->getAddr() + " from " + m_endPoint, std::ios_base::out | std::ios_base::binary);
     m_inBuffer.erase(m_inBuffer.begin()); // first packet is header
     for(auto& packet : m_inBuffer)
-        file << packet->getBody().data();
+        file.write(packet->getBody().data(), packet->getBody().size());
     m_inBuffer.clear();
     m_bytesReceivedSoFar = 0;
     m_currentMessageSize = 0;

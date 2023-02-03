@@ -26,15 +26,15 @@ public:
 
     void addTcpConnection(const string& endPoint, duration initRTT);
     void sendPacket(shared_ptr<Packet> packet);
+    void sendMessageTo(const string& receiver, const std::vector<char>& data, uint64_t repeateDelay);
     // AbstractNode interface
 public:
     void log(const string &msg) override;
     void startNode() override;
     void stopNode() override;
     NodeType getType() override;
-    void sendMessageTo(const string& receiver, const std::vector<char>& data, uint64_t repeateDelay);
+    void handleNewMessage(shared_ptr<AbstractNetMessage> message) override;
 private:
-    void handleNewMessage(shared_ptr<AbstractNetMessage> message);
     void handlePacket(shared_ptr<Packet> packet);
 
 };

@@ -44,6 +44,8 @@ class TCPConnection
     bool m_isTimeoutAllowed = false;
     uint64_t m_repeatDelay;
 
+    time_point m_startTime;
+
 
     bool m_isOpen = true;
 

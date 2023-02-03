@@ -6,12 +6,15 @@
 
 
 Router::duration Router::defaultRouterDelay = Router::duration(0);
-uint64_t Router::defaultBufferSize = 5;
+uint64_t Router::defaultBufferSize = (uint64_t)-1;
+double Router::defaultDropRate = 0.0;
 
 Router::Router(const string &addr) :
     AbstractNode(addr), m_algController(NetworkController::getInstance())
 {
     m_logFilename = "./log/Router:" + m_addr + ".txt";
+    if(defaultBufferSize != (uint64_t)-1)
+        m_nodeQueue = moodycamel::BlockingConcurrentQueue<shared_ptr<AbstractNetMessage>>(defaultBufferSize);
 }
 
 void Router::log(const string &msg)
@@ -69,7 +72,10 @@ void Router::handleNewMessage(shared_ptr<AbstractNetMessage> message)
         {
             auto packet = std::dynamic_pointer_cast<Packet>(message);
             log("Routing a packet from " + packet->getSource() + " to " + packet->getDestination());
-            routeAndForwardPacket(packet);
+            if(((double)rand()/RAND_MAX) > defaultDropRate)
+                routeAndForwardPacket(packet);
+            else
+                log("Dropped by the drop rate");
             break;
         }
         default:
@@ -102,10 +108,9 @@ void Router::takeMessage(shared_ptr<AbstractNetMessage> message)
 
 void Router::broadCastNewLink(string destination, uint64_t updatedCost)
 {
-    log("Broadcasting a link to " + destination + " with cost of " + std::to_string(updatedCost));
-    if(true)
+    if(m_isRunning)
     {
-
+        log("Broadcasting a link to " + destination + " with cost of " + std::to_string(updatedCost));
         for(auto& pair : m_toHostsLinks)
         {
             pair.second.host->takeMessage(make_shared<RoutingMessage>(std::dynamic_pointer_cast<Router>(shared_from_this()), destination, updatedCost));
@@ -126,12 +131,6 @@ void Router::routeAndForwardPacket(shared_ptr<Packet> packet)
     {
         std::cout << "Address not found" << std::endl;
         return;
-    }
-
-    std::chrono::high_resolution_clock::duration delay;
-    {
-        std::scoped_lock<std::mutex> scopedLock(m_routerLock);
-        delay = m_nanosecDelay;
     }
     std::this_thread::sleep_for(m_nanosecDelay);
     m_routingTable[destAddr].nextHop->takeMessage(std::move(packet));

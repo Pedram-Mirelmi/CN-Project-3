@@ -82,17 +82,19 @@ void handleSend(std::stringstream& commandStream, Network& network)
 void handleSet(std::stringstream& commandStream, Network& network)
 {
     using namespace std;
-    string nodeTypename, propery;
-    uint64_t value;
-    commandStream >> nodeTypename >> propery >> value;
-    if(nodeTypename == "router")
-    {
-        if(propery == "delay")
-            network.setRouterDelay(value);
-        else if(propery == "buffer")
-            network.setRouterBufferSize(value);
-    }
-
+    string routerWord, propery;
+    double value;
+    commandStream >> routerWord >> propery >> value;
+    if(propery == "delay")
+        network.setRouterDelay(value);
+    else if(propery == "buffer")
+        network.setRouterBufferSize(value);
+    else if(propery == "drop-rate")
+        network.setRouterDropRate(value);
+    else if(propery == "size") // packet size
+        network.setPacketSize(value);
+    else
+        cout << "Unknown property: " << propery << endl;
 }
 
 void runProgram()
@@ -113,32 +115,32 @@ void runProgram()
         }
         else if(firstWord == "update") // update
         {
-//            string secondWord;
-//            commandStream >> secondWord; // link
-//            if(secondWord != "link")
-//            {
-//                cout << "unknown command";
-//                continue;
-//            }
-//            string addr1, addr2;
-//            uint64_t costOrSd, td;
-//            commandStream >> addr1 >> addr2 >> costOrSd;
-//            if(commandStream.tellg() == -1)
-//            {
-//                network.updateLinkCost(addr1, addr2, costOrSd);
-//            }
-//            else
-//            {
-//                commandStream >> td;
-//                network.temporarilyDownLink(addr1, addr2, costOrSd, td);
-//            }
+            string secondWord;
+            commandStream >> secondWord; // link
+            if(secondWord != "link")
+            {
+                cout << "unknown command";
+                continue;
+            }
+            string addr1, addr2;
+            uint64_t costOrSd, td;
+            commandStream >> addr1 >> addr2 >> costOrSd;
+            if(commandStream.tellg() == -1)
+            {
+                network.updateLinkCost(addr1, addr2, costOrSd);
+            }
+            else
+            {
+                commandStream >> td;
+                network.temporarilyDownLink(addr1, addr2, costOrSd, td);
+            }
 
         }
         else if(firstWord == "remove") // remove
         {
-//            string addr1, addr2;
-//            commandStream >> addr1 >> addr2;
-//            network.removeLink(addr1, addr2);
+            string addr1, addr2;
+            commandStream >> addr1 >> addr2;
+            network.removeLink(addr1, addr2);
         }
         else if(firstWord == "log")
         {
@@ -186,6 +188,7 @@ void runProgram()
 
 int main()
 {
+    srand(time(0));
     runProgram();
     return 0;
 }

@@ -87,7 +87,7 @@ public:
     virtual bool updateRoutingTable(const string& dest, uint64_t cost, shared_ptr<AbstractNode> nextHop);
 
     virtual void takeMessage(shared_ptr<AbstractNetMessage> message);
-
+    virtual void handleNewMessage(shared_ptr<AbstractNetMessage> message) = 0;
     virtual NodeType getType() = 0;
     const RoutingTable_t &getRoutingTable() const;
     const RouterLinkMap_t &getRoutersLinks() const;

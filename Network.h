@@ -81,6 +81,9 @@ public:
 
     void setRouterBufferSize(u_int16_t length);
 
+    void setRouterDropRate(double rate);
+
+    void setPacketSize(u_int64_t size);
 
     ~Network();
 };

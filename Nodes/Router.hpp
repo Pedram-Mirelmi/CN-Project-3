@@ -23,6 +23,7 @@ class Router : public AbstractNode
 public:
     static duration defaultRouterDelay;
     static uint64_t defaultBufferSize;
+    static double defaultDropRate;
 public:
     Router(const string &addr);
     Router(const Router& other) = delete;

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "NetworkController.h"
 
 shared_ptr<NetworkController> NetworkController::instance;
@@ -39,6 +40,7 @@ void NetworkController::incConvergeCounter()
 void NetworkController::decConvergeCounter()
 {
     std::scoped_lock<std::mutex> scopedLock(m_algConvergerCounterLock);
+//    std::cout << "dec" << std::endl;
     m_algConvergeCounter--;
     if(!m_algConvergeCounter)
         m_endTime = std::chrono::system_clock::now();
