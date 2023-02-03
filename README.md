@@ -124,7 +124,9 @@ The challenge is where whenever we send a window size of packets and start a tim
 
 ### Sender log file:
 
-**Time spend for sender: 7,178,081,435 ns**
+**Time spend for sender: 7,178,081,435 ns**<br/>
+**ssthresh = 1**<br/>
+**Window size = 1**<br/>
 
 ![](./Doc%20files/Simulation1-SendLog-fifo%3Dinf%2Cpacketsize%3D10%2Cdelay%3D0.png)
 
@@ -148,15 +150,16 @@ The challenge is where whenever we send a window size of packets and start a tim
 ### Receiver log file: 
 
 
-**Time spent for receiver: 60,655,557,265 ns**
+**Time spent for receiver: 64,413,424,976 ns**
 
 
 ![](./Doc%20files/Simulation2-RecvLog-fifo%3D5%2Cpacketsize%3D10%2Cdelay%3D1ms%2Cdrop-rate%3D0.1.png)
 
 ### Sender log file:
 
-**Time spent for sender: 60,679,495,256 ns**
-
+**Time spent for sender: 64,438,828,141 ns** <br/>
+**ssthresh = 1**<br/>
+**Window size = 1**<br/>
 ![](./Doc%20files/Simulation2-SendLog-fifo%3D5%2Cpacketsize%3D10%2Cdelay%3D1ms%2Cdrop-rate%3D0.1.png)
 
 ### Diff

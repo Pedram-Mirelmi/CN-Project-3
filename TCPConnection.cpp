@@ -295,6 +295,7 @@ void TCPConnection::onDataSentCompletely()
 {
     log("File transmitted Completely!!!!\nRetransmitting in " + std::to_string(m_repeatDelay) + "ns ...");
     log("Time to send: " + std::to_string((std::chrono::high_resolution_clock::now()-m_startTime).count()) + "ns");
+    log("ssthresh: " + std::to_string(m_ssthresh) + "\nWindow size: " + std::to_string(m_cwnd));
     stopTimeout();
     if(m_repeatDelay != (uint64_t)-1)
     {
