@@ -23,9 +23,10 @@ public:
     Host& operator=(const Host& other) = delete;
 
     void addTcpConnection(const string& endPoint, duration initRTT);
-
+    void sendPacket(shared_ptr<Packet> packet);
     // AbstractNode interface
 public:
+    void log(const string &msg) override;
     void startNode() override;
     void stopNode() override;
     NodeType getType() override;
@@ -33,6 +34,7 @@ public:
 private:
     void handleNewMessage(shared_ptr<AbstractNetMessage> message);
     void handlePacket(shared_ptr<Packet> packet);
+
 };
 
 

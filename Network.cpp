@@ -192,8 +192,8 @@ void Network::commandToSend(const string &sender,
         auto senderNode = m_hosts[sender];
         auto receiverNode = m_hosts[receiver];
 
-        senderNode->addTcpConnection(receiver, std::chrono::nanoseconds(5*Router::defaultFifoSize*Router::defaultRouterDelay.count()));
-        receiverNode->addTcpConnection(sender, std::chrono::nanoseconds(5*Router::defaultFifoSize*Router::defaultRouterDelay.count()));
+        senderNode->addTcpConnection(receiver, std::chrono::nanoseconds(5*Router::defaultBufferSize*Router::defaultRouterDelay.count()));
+        receiverNode->addTcpConnection(sender, std::chrono::nanoseconds(5*Router::defaultBufferSize*Router::defaultRouterDelay.count()));
 
         senderNode->sendMessageTo(receiver, data, repeateDelay);
     }
@@ -234,10 +234,10 @@ void Network::setRouterDelay(u_int64_t nanoseconds)
 
 void Network::setRouterFifo(u_int16_t size)
 {
-    Router::defaultFifoSize = size;
+    Router::defaultBufferSize = size;
     shutDown();
     for(auto& router : m_routers)
-        router.second->setFifoSize(Router::defaultFifoSize);
+        router.second->setFifoSize(Router::defaultBufferSize);
     run();
 }
 

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "Host.hpp"
 #include "Router.hpp"
 
@@ -12,14 +13,24 @@ Host::Host(const string &addr)
 
 void Host::addTcpConnection(const string &endPoint, duration initRTT)
 {
+    log("Adding a connection to " + endPoint);
     if(!m_connections.contains(endPoint))
     {
         m_connections[endPoint] = TCPConnection(std::dynamic_pointer_cast<Host>(shared_from_this()), endPoint, initRTT);
     }
 }
 
+void Host::log(const string &msg)
+{
+    std::scoped_lock<std::mutex> scopedLock(m_logLock);
+    std::ofstream logFile(string("HOST: ") + m_addr, std::ios_base::app);
+    logFile << msg << '\n';
+    logFile.close();
+}
+
 void Host::startNode()
 {
+    log("Starting ...");
     for(auto& connection : m_connections)
         connection.second = TCPConnection(std::dynamic_pointer_cast<Host>(shared_from_this()),
                                           connection.second.getEndPoint(),
@@ -43,6 +54,7 @@ void Host::startNode()
 
 void Host::stopNode()
 {
+    log("Stopping ...");
     AbstractNode::stopNode();
     for(auto& connection : m_connections)
         connection.second.closeConnection();
@@ -74,9 +86,24 @@ void Host::handleNewMessage(shared_ptr<AbstractNetMessage> message)
     }
 }
 
+void Host::sendPacket(shared_ptr<Packet> packet)
+{
+    log("Sending a packet to " + packet->getDestination());
+    auto& dest = packet->getDestination();
+    if(m_routingTable.contains(dest))
+    {
+        m_routingTable[dest].nextHop->takeMessage(packet);
+    }
+    else
+    {
+        // TODO
+    }
+}
+
 
 void Host::handlePacket(shared_ptr<Packet> packet)
 {
+    log("Handling a packet from " + packet->getSource());
     if(m_connections.contains(packet->getSource()))
         m_connections[packet->getSource()].takePacket(std::move(packet));
     else
@@ -93,6 +120,7 @@ AbstractNode::NodeType Host::getType()
 
 void Host::sendMessageTo(const string& receiver, const std::vector<char>& data, uint64_t repeateDelay)
 {
+    log("Sending data of size " + std::to_string(data.size()) + " to " + receiver);
     if(m_connections.contains(receiver))
     {
         m_connections[receiver].sendMessage(data, repeateDelay);

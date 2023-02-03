@@ -20,7 +20,7 @@ class Router : public AbstractNode
     uint64_t m_fifoSize = -1;
 public:
     static duration defaultRouterDelay;
-    static uint64_t defaultFifoSize;
+    static uint64_t defaultBufferSize;
 public:
     Router(const string &addr);
     Router(const Router& other) = delete;
@@ -28,6 +28,7 @@ public:
 
     // AbstractNode interface
 public:
+    void log(const string &msg) override;
     void startNode() override;
     bool updateRoutingTable(const string& dest, uint64_t cost, shared_ptr<AbstractNode> nextHop) override;
     void takeMessage(shared_ptr<AbstractNetMessage> message) override;
@@ -38,8 +39,11 @@ private:
     void broadCastNewLink(string destination, uint64_t updatedCost);
     void routeAndForwardPacket(shared_ptr<Packet> packet);
 public:
+    void setDelay();
     void setDelay(uint64_t nanosecends);
-    void setFifoSize(u_int64_t length);
+    void setBufferSize();
+    void setBufferSize(u_int64_t length);
+
 };
 
 

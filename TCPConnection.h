@@ -54,6 +54,9 @@ class TCPConnection
     uint64_t m_bytesReceivedSoFar = 0;
     uint64_t m_numberOfTotalPackets;
     uint64_t m_receiverLastPacketAcked = 0;
+
+    std::mutex m_logLock;
+    void log(const string& msg);
 public:
     static uint64_t Packet_Size;
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <thread>
 #include "../concurrentqueue-master/blockingconcurrentqueue.h"
@@ -59,6 +60,8 @@ protected:
     bool m_isRunning = false, m_mustStop = false;
     bool m_isBufferLimited;
     moodycamel::BlockingConcurrentQueue<shared_ptr<AbstractNetMessage>> m_nodeQueue;
+
+    std::mutex m_logLock;
 public:
     enum NodeType {ROUTER, HOST};
 public:
@@ -66,6 +69,9 @@ public:
 //    AbstractNode(const AbstractNode& other) = delete;
 //    AbstractNode& operator=(const AbstractNode& other) = delete;
     ~AbstractNode();
+
+    virtual void log(const string& msg) = 0;
+
     virtual const string &getAddr() const;
     virtual void startNode() = 0;
     virtual void stopNode();
@@ -81,8 +87,6 @@ public:
     virtual bool updateRoutingTable(const string& dest, uint64_t cost, shared_ptr<AbstractNode> nextHop);
 
     virtual void takeMessage(shared_ptr<AbstractNetMessage> message);
-
-    virtual void sendPacket(shared_ptr<Packet> packet);
 
     virtual NodeType getType() = 0;
     const RoutingTable_t &getRoutingTable() const;

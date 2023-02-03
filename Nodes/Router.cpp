@@ -1,11 +1,12 @@
 #include <iostream>
+#include <fstream>
 #include "Router.hpp"
 #include "Host.hpp"
 
 
 
 Router::duration Router::defaultRouterDelay = Router::duration(0);
-uint64_t Router::defaultFifoSize = 5;
+uint64_t Router::defaultBufferSize = 5;
 
 Router::Router(const string &addr) :
     AbstractNode(addr), m_algController(NetworkController::getInstance())
@@ -13,8 +14,17 @@ Router::Router(const string &addr) :
 
 }
 
+void Router::log(const string &msg)
+{
+    std::scoped_lock<std::mutex> scopedLock(m_logLock);
+    std::ofstream logFile(string("ROUTER: ") + m_addr, std::ios_base::app);
+    logFile << msg << '\n';
+    logFile.close();
+}
+
 void Router::startNode()
 {
+    log("Starting ...");
     m_thread = std::thread([this](){
         m_isRunning = true;
         m_algController->incRunningNodeCounter();
@@ -75,6 +85,7 @@ bool Router::updateRoutingTable(const string& dest, uint64_t cost, shared_ptr<Ab
 
 void Router::takeMessage(shared_ptr<AbstractNetMessage> message)
 {
+    log("Received a message");
     if(!m_mustStop)
     {
         if(m_fifoSize == (uint64_t)-1)
@@ -86,6 +97,7 @@ void Router::takeMessage(shared_ptr<AbstractNetMessage> message)
 
 void Router::broadCastNewLink(string destination, uint64_t updatedCost)
 {
+    log("Broadcasting a link to " + destination + " with cost of " + std::to_string(updatedCost));
     if(true)
     {
 
@@ -104,6 +116,7 @@ void Router::broadCastNewLink(string destination, uint64_t updatedCost)
 
 void Router::routeAndForwardPacket(shared_ptr<Packet> packet)
 {
+    log("Routing a packet from " + packet->getSource() + " to " + packet->getDestination());
     auto destAddr = packet->getDestination();
     if(!m_routingTable.contains(destAddr))
     {
@@ -120,14 +133,26 @@ void Router::routeAndForwardPacket(shared_ptr<Packet> packet)
     m_routingTable[destAddr].nextHop->takeMessage(std::move(packet));
 }
 
+void Router::setDelay()
+{
+    setDelay(defaultRouterDelay.count());
+}
+
 void Router::setDelay(uint64_t nanosecends)
 {
+    log("Setting delay to " + std::to_string(nanosecends) + "ns");
     std::scoped_lock<std::mutex> scopedLock(m_routerLock);
     m_nanosecDelay = std::chrono::nanoseconds(nanosecends);
 }
 
-void Router::setFifoSize(u_int64_t size)
+void Router::setBufferSize()
 {
+    setBufferSize(defaultBufferSize);
+}
+
+void Router::setBufferSize(u_int64_t size)
+{
+    log("Setting biffer size to " + std::to_string(size));
     if(size == (uint64_t)-1)
         m_fifoSize = size;
     else

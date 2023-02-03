@@ -1,6 +1,7 @@
 #include <iostream>
 #include <tuple>
 #include <cstring>
+#include <fstream>
 #include "TCPConnection.h"
 #include "./Nodes/Host.hpp"
 
@@ -9,8 +10,16 @@
 uint64_t TCPConnection::Packet_Size = 10;
 uint16_t TCPConnection::maxPacketId = uint64_t((2<<15) - 1); // 2**15 - 1
 
+void TCPConnection::log(const string &msg)
+{
+    std::scoped_lock<std::mutex> scopedLock(m_logLock);
+    std::ofstream logFile(m_correspondingHost->getAddr()+ ":" + m_endPoint, std::ios_base::app);
+    logFile << msg << '\n';
+    logFile.close();
+}
+
 TCPConnection::TCPConnection(shared_ptr<Host> host, const string& endPoint, duration initRTT)
-    :m_endPoint(endPoint),
+    : m_endPoint(endPoint),
       m_correspondingHost(host),
       m_estimatedRTT(initRTT)
 {
@@ -60,24 +69,29 @@ void TCPConnection::takePacket(shared_ptr<Packet> packet)
 
 void TCPConnection::closeConnection()
 {
+    log("Closing connection");
     std::scoped_lock<std::mutex> scopedLock(m_connectionLock);
     m_isOpen = false;
     stopTimeout();
+    log("Finished closing connection");
 }
 
 void TCPConnection::resetConnection()
 {
+    log("Resetting connection");
     closeConnection();
     std::scoped_lock<std::mutex> scopedLock(m_connectionLock);
     auto msgBuffer = std::move(m_msgBuffer);
     *(this) = TCPConnection(m_correspondingHost, m_endPoint, m_estimatedRTT);
     m_msgBuffer = std::move(msgBuffer);
     m_isOpen = true;
+    log("Finished resetting connection");
 }
 
 
 void TCPConnection::sendMessage(const std::vector<char>& msgBuffer, uint64_t repeatDelay)
 {
+    log("Beginning to send a message of size " + std::to_string(msgBuffer.size()));
     resetConnection();
     m_repeatDelay = repeatDelay;
     m_msgBuffer = msgBuffer;
@@ -101,6 +115,7 @@ void TCPConnection::sendMessage()
 
 void TCPConnection::startSlowAgain()
 {
+    log("Slow starting again");
     m_ssthresh = std::max(m_cwnd/2, (uint64_t)1);
     m_cwnd = 1;
     m_lastPacketSent = m_senderLastPacketAcked;
@@ -111,9 +126,11 @@ void TCPConnection::timeoutBody(duration duration)
     bool dummy;
     if(!m_timeoutNotifier.wait_dequeue_timed(dummy, duration)) // timeout
     {
+        log("Time out!");
         std::scoped_lock<std::mutex> scopedLock1(m_connectionLock);
         if(m_isTimeoutAllowed && m_isOpen)
         {
+            log("Retransmitting...");
             startSlowAgain();
             sendNextWindow();
             startTimeout(getEstimatedTimeout());
@@ -124,11 +141,13 @@ void TCPConnection::timeoutBody(duration duration)
 
 void TCPConnection::startTimeout(duration duration)
 {
+    log("Starting timeout");
     m_timeoutThreads.push_back(std::thread(&TCPConnection::timeoutBody, this, std::move(duration)));
 }
 
 void TCPConnection::stopTimeout()
 {
+    log("Stopping timeout");
     m_isTimeoutAllowed = false;
     m_timeoutNotifier.enqueue(true); // anything
     m_connectionLock.unlock();
@@ -143,6 +162,7 @@ void TCPConnection::stopTimeout()
 
 void TCPConnection::handleAck(shared_ptr<Packet> packet)
 {
+    log("New ack with packet id: " + std::to_string(packet->getPacketId()));
     if(m_isOpen)
     {
         std::scoped_lock<std::mutex> scopedLock(m_connectionLock);
@@ -182,6 +202,7 @@ void TCPConnection::handleAck(shared_ptr<Packet> packet)
 
 void TCPConnection::measureRTT(shared_ptr<Packet> packet)
 {
+
     auto i = m_lastPacketSent;
     duration newRTT;
     while (i>0)
@@ -191,10 +212,12 @@ void TCPConnection::measureRTT(shared_ptr<Packet> packet)
     }
     newRTT = std::chrono::high_resolution_clock::now() - m_outBuffer[i+1].timeSent;
     m_estimatedRTT = duration((uint64_t)(ALPHA*m_estimatedRTT.count() + BETA*newRTT.count()));
+    log("New estimated RTT(nanoseconds): " + std::to_string(m_estimatedRTT.count()));
 }
 
 void TCPConnection::packetize(const std::vector<char> &wholeMessage)
 {
+    log("Packetizing");
     uint64_t size = wholeMessage.size();
     auto numberOfPacketsNeeded = size/Packet_Size + 1; // +1 (first packet)
     if(size%Packet_Size)
@@ -225,6 +248,7 @@ void TCPConnection::packetize(const std::vector<char> &wholeMessage)
     }
     if(size%Packet_Size)
         m_outBuffer.back().packet->getBody().resize(size%Packet_Size);
+    log(std::to_string(m_outBuffer.size()-1) + " of total packets");
 }
 
 TCPConnection::duration TCPConnection::getEstimatedTimeout()
@@ -241,10 +265,10 @@ const TCPConnection::string &TCPConnection::getEndPoint() const
 
 void TCPConnection::sendNextWindow()
 {
-//    print("sending window")
     m_lastPacketSent = m_senderLastPacketAcked + m_cwnd;
     m_lastPacketSent = std::min(m_lastPacketSent, m_outBuffer.size()-1);
     auto startingPoint = m_senderLastPacketAcked + 1;
+    log("Transmitting with window size of: " + std::to_string(m_cwnd));
     for(auto i = startingPoint; i <= m_lastPacketSent; i++)
     {
 //        std::cout << "sending " << m_outBuffer[i].packet->getPacketId() << std::endl;
@@ -259,15 +283,19 @@ void TCPConnection::sendNextWindow()
 
 void TCPConnection::onDataSentCompletely()
 {
+    log("File transmitted Completely!!!!\nRetransmitting in " + std::to_string(m_repeatDelay) + "ns ...");
     stopTimeout();
+    std::this_thread::sleep_for(std::chrono::nanoseconds(m_repeatDelay));
+    sendMessage();
 }
 
 void TCPConnection::handleData(shared_ptr<Packet> packet)
 {
-//    print("handling data");
+    log("New packet received");
     auto& body = packet->getBody();
     if(!m_inBuffer.size()) // empty buffer: first packet
     {
+        m_endPoint = packet->getSource();
         m_currentMessageSize = *((uint64_t*)body.data());
         m_numberOfTotalPackets = (m_currentMessageSize/Packet_Size) + (m_currentMessageSize%Packet_Size ? 1 : 0) + 1;
         m_inBuffer.push_back(packet);
@@ -300,9 +328,11 @@ void TCPConnection::sendPacketAck(shared_ptr<Packet> packet)
 
 void TCPConnection::onNewFileCompletelyReceived()
 {
-    print("finished:")
+    log("File received completely!!!");
+    std::ofstream file(std::string("From") + m_endPoint, std::ios_base::out);
+    m_inBuffer.erase(m_inBuffer.begin()); // first packet is header
     for(auto& packet : m_inBuffer)
-        print(packet->getBody().data());
+        file << packet->getBody().data();
     m_inBuffer.clear();
     m_bytesReceivedSoFar = m_currentMessageSize = 0;
 }
