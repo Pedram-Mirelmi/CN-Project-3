@@ -113,6 +113,7 @@ void TCPConnection::sendMessage()
     m_connectionLock.lock();
     m_repeatDelay = repeateDelay;
     packetize(m_msgBuffer);
+    m_startTime = std::chrono::high_resolution_clock::now();
     sendNextWindow();
 
     m_isTimeoutAllowed = true;
@@ -295,8 +296,11 @@ void TCPConnection::onDataSentCompletely()
     log("File transmitted Completely!!!!\nRetransmitting in " + std::to_string(m_repeatDelay) + "ns ...");
     log("Time to send: " + std::to_string((std::chrono::high_resolution_clock::now()-m_startTime).count()) + "ns");
     stopTimeout();
-    std::this_thread::sleep_for(std::chrono::nanoseconds(m_repeatDelay));
-    sendMessage();
+    if(m_repeatDelay != (uint64_t)-1)
+    {
+        std::this_thread::sleep_for(std::chrono::nanoseconds(m_repeatDelay));
+        sendMessage();
+    }
 }
 
 void TCPConnection::handleData(shared_ptr<Packet> packet)

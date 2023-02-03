@@ -170,7 +170,7 @@ void Network::showTables(const string &addr)
 
 void Network::printTable(const AbstractNode::RoutingTable_t &table)
 {
-    std::cout << "=======================================================" << std::endl;
+    std::cout << "================dest======cost============next hop=====" << std::endl;
     for(auto& pair: table)
     {
         std::cout << std::setw(20) << pair.first

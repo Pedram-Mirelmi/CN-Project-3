@@ -5,9 +5,9 @@
 
 
 
-Router::duration Router::defaultRouterDelay = Router::duration(0);
-uint64_t Router::defaultBufferSize = (uint64_t)-1;
-double Router::defaultDropRate = 0.0;
+Router::duration Router::defaultRouterDelay = Router::duration(1000000);
+uint64_t Router::defaultBufferSize = 5;
+double Router::defaultDropRate = 0.1;
 
 Router::Router(const string &addr) :
     AbstractNode(addr), m_algController(NetworkController::getInstance())
