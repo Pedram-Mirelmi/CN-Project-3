@@ -232,12 +232,12 @@ void Network::setRouterDelay(u_int64_t nanoseconds)
         router.second->setDelay(nanoseconds);
 }
 
-void Network::setRouterFifo(u_int16_t size)
+void Network::setRouterBufferSize(u_int16_t size)
 {
     Router::defaultBufferSize = size;
     shutDown();
     for(auto& router : m_routers)
-        router.second->setFifoSize(Router::defaultBufferSize);
+        router.second->setBufferSize(Router::defaultBufferSize);
     run();
 }
 

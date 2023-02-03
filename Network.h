@@ -79,7 +79,7 @@ public:
 
     void setRouterDelay(u_int64_t nanoseconds);
 
-    void setRouterFifo(u_int16_t length);
+    void setRouterBufferSize(u_int16_t length);
 
 
     ~Network();

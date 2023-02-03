@@ -18,6 +18,8 @@ class Router : public AbstractNode
     duration m_nanosecDelay;
     std::mutex m_routerLock;
     uint64_t m_fifoSize = -1;
+
+    string m_logFilename;
 public:
     static duration defaultRouterDelay;
     static uint64_t defaultBufferSize;

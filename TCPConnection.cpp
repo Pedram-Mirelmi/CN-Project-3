@@ -13,7 +13,7 @@ uint16_t TCPConnection::maxPacketId = uint64_t((2<<15) - 1); // 2**15 - 1
 void TCPConnection::log(const string &msg)
 {
     std::scoped_lock<std::mutex> scopedLock(m_logLock);
-    std::ofstream logFile(m_correspondingHost->getAddr()+ ":" + m_endPoint, std::ios_base::app);
+    std::ofstream logFile(m_logFilename, std::ios_base::app);
     logFile << msg << '\n';
     logFile.close();
 }
@@ -23,7 +23,7 @@ TCPConnection::TCPConnection(shared_ptr<Host> host, const string& endPoint, dura
       m_correspondingHost(host),
       m_estimatedRTT(initRTT)
 {
-
+    m_logFilename = "./log/TCP: " + m_correspondingHost->getAddr() + ":" + m_endPoint + ".txt";
 }
 
 TCPConnection::TCPConnection(TCPConnection &&other)
@@ -56,6 +56,7 @@ TCPConnection &TCPConnection::operator=(TCPConnection &&other)
     m_numberOfTotalPackets = other.m_numberOfTotalPackets;
     m_receiverLastPacketAcked = other.m_receiverLastPacketAcked;
 
+    m_logFilename = std::move(other.m_logFilename);
     return *this;
 }
 
@@ -104,9 +105,11 @@ void TCPConnection::sendMessage(const std::vector<char>& msgBuffer, uint64_t rep
 void TCPConnection::sendMessage()
 {
     auto repeateDelay = m_repeatDelay;
+    m_connectionLock.unlock();
     resetConnection();
+    m_connectionLock.lock();
     m_repeatDelay = repeateDelay;
-
+    packetize(m_msgBuffer);
     sendNextWindow();
 
     m_isTimeoutAllowed = true;
@@ -210,9 +213,12 @@ void TCPConnection::measureRTT(shared_ptr<Packet> packet)
         if(m_outBuffer[i--].packet->getPacketId() == packet->getPacketId())
             break;
     }
-    newRTT = std::chrono::high_resolution_clock::now() - m_outBuffer[i+1].timeSent;
-    m_estimatedRTT = duration((uint64_t)(ALPHA*m_estimatedRTT.count() + BETA*newRTT.count()));
-    log("New estimated RTT(nanoseconds): " + std::to_string(m_estimatedRTT.count()));
+    if(!m_outBuffer[i+1].isAcked)
+    {
+        newRTT = std::chrono::high_resolution_clock::now() - m_outBuffer[i+1].timeSent;
+        m_estimatedRTT = duration((uint64_t)(ALPHA*m_estimatedRTT.count() + BETA*newRTT.count()));
+        log("New estimated RTT(nanoseconds): " + std::to_string(m_estimatedRTT.count()));
+    }
 }
 
 void TCPConnection::packetize(const std::vector<char> &wholeMessage)
@@ -271,7 +277,7 @@ void TCPConnection::sendNextWindow()
     log("Transmitting with window size of: " + std::to_string(m_cwnd));
     for(auto i = startingPoint; i <= m_lastPacketSent; i++)
     {
-//        std::cout << "sending " << m_outBuffer[i].packet->getPacketId() << std::endl;
+        //        std::cout << "sending " << m_outBuffer[i].packet->getPacketId() << std::endl;
         m_correspondingHost->sendPacket(m_outBuffer[i].packet);
         if(!m_outBuffer[i].isSent)
         {
@@ -291,31 +297,30 @@ void TCPConnection::onDataSentCompletely()
 
 void TCPConnection::handleData(shared_ptr<Packet> packet)
 {
-    log("New packet received");
+    log("Handling data from " + packet->getSource() + " id: " + std::to_string(packet->getPacketId()));
     auto& body = packet->getBody();
-    if(!m_inBuffer.size()) // empty buffer: first packet
+    if(packet->getPacketId() == 1)
+    {
+        int a = 5;
+    }
+    if(!m_inBuffer.size() && m_bytesReceivedSoFar == 0 && body.size() == 8) // empty buffer: first packet
     {
         m_endPoint = packet->getSource();
         m_currentMessageSize = *((uint64_t*)body.data());
         m_numberOfTotalPackets = (m_currentMessageSize/Packet_Size) + (m_currentMessageSize%Packet_Size ? 1 : 0) + 1;
         m_inBuffer.push_back(packet);
     }
-    else
+    else if(packet->getPacketId() == (m_receiverLastPacketAcked%maxPacketId)+1) //OK
     {
-        if(packet->getPacketId() == (m_receiverLastPacketAcked%maxPacketId)+1) //OK
-        {
-            m_inBuffer.push_back(packet);
-            m_bytesReceivedSoFar += packet->getBody().size();
-        }
+        m_inBuffer.push_back(packet);
+        m_bytesReceivedSoFar += packet->getBody().size();
+        if(m_currentMessageSize == m_bytesReceivedSoFar)
+            onNewFileCompletelyReceived();
     }
-    if(m_currentMessageSize == m_bytesReceivedSoFar)
-        onNewFileCompletelyReceived();
 
-    if(packet->getPacketId() > (m_receiverLastPacketAcked%maxPacketId))
-    {
+    if(packet->getPacketId() == m_receiverLastPacketAcked%maxPacketId + 1)
         m_receiverLastPacketAcked++;
-        sendPacketAck(std::move(packet));
-    }
+    sendPacketAck(std::move(packet));
 }
 
 void TCPConnection::sendPacketAck(shared_ptr<Packet> packet)
@@ -329,11 +334,14 @@ void TCPConnection::sendPacketAck(shared_ptr<Packet> packet)
 void TCPConnection::onNewFileCompletelyReceived()
 {
     log("File received completely!!!");
-    std::ofstream file(std::string("From") + m_endPoint, std::ios_base::out);
+    std::ofstream file("./log/" + m_correspondingHost->getAddr() + " from " + m_endPoint, std::ios_base::out);
     m_inBuffer.erase(m_inBuffer.begin()); // first packet is header
     for(auto& packet : m_inBuffer)
         file << packet->getBody().data();
     m_inBuffer.clear();
-    m_bytesReceivedSoFar = m_currentMessageSize = 0;
+    m_bytesReceivedSoFar = 0;
+    m_currentMessageSize = 0;
+    m_numberOfTotalPackets = 0;
+    m_receiverLastPacketAcked = 0;
 }
 

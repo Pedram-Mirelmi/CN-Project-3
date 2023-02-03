@@ -11,13 +11,13 @@ uint64_t Router::defaultBufferSize = 5;
 Router::Router(const string &addr) :
     AbstractNode(addr), m_algController(NetworkController::getInstance())
 {
-
+    m_logFilename = "./log/Router:" + m_addr + ".txt";
 }
 
 void Router::log(const string &msg)
 {
     std::scoped_lock<std::mutex> scopedLock(m_logLock);
-    std::ofstream logFile(string("ROUTER: ") + m_addr, std::ios_base::app);
+    std::ofstream logFile(m_logFilename, std::ios_base::app);
     logFile << msg << '\n';
     logFile.close();
 }
@@ -36,6 +36,7 @@ void Router::startNode()
         {
             shared_ptr<AbstractNetMessage> message;
             this->m_nodeQueue.wait_dequeue(message);
+            log("Received a message");
             if(m_mustStop)
                 break;
             this->handleNewMessage(std::move(message));
@@ -52,24 +53,29 @@ void Router::handleNewMessage(shared_ptr<AbstractNetMessage> message)
 {
     switch (message->getMessageType())
     {
-    case AbstractNetMessage::ROUTING_MESSAGE:
-    {
-        auto routingMessage = std::dynamic_pointer_cast<RoutingMessage>(message);
-        auto betweenNodeCost = m_links[routingMessage->getSender()->getAddr()].cost;
-        updateRoutingTable(routingMessage->getDestination(), routingMessage->getCost()+betweenNodeCost, routingMessage->getSender());
-        m_algController->decConvergeCounter();
-        break;
-    }
-    case AbstractNetMessage::PACKET:
-    {
-        auto packet = std::dynamic_pointer_cast<Packet>(message);
-        routeAndForwardPacket(packet);
-        break;
-    }
-    default:
-    {
-        std::cout << "Unknown type of message received!" << std::endl;
-    }
+        case AbstractNetMessage::ROUTING_MESSAGE:
+        {
+            auto routingMessage = std::dynamic_pointer_cast<RoutingMessage>(message);
+            log("Handling routing message: (" +
+                routingMessage->getDestination() +
+                ", " + std::to_string(routingMessage->getCost()) +
+                ", " + routingMessage->getSender()->getAddr());
+            auto betweenNodeCost = m_links[routingMessage->getSender()->getAddr()].cost;
+            updateRoutingTable(routingMessage->getDestination(), routingMessage->getCost()+betweenNodeCost, routingMessage->getSender());
+            m_algController->decConvergeCounter();
+            break;
+        }
+        case AbstractNetMessage::PACKET:
+        {
+            auto packet = std::dynamic_pointer_cast<Packet>(message);
+            log("Routing a packet from " + packet->getSource() + " to " + packet->getDestination());
+            routeAndForwardPacket(packet);
+            break;
+        }
+        default:
+        {
+            std::cout << "Unknown type of message received!" << std::endl;
+        }
     }
 }
 
@@ -85,7 +91,6 @@ bool Router::updateRoutingTable(const string& dest, uint64_t cost, shared_ptr<Ab
 
 void Router::takeMessage(shared_ptr<AbstractNetMessage> message)
 {
-    log("Received a message");
     if(!m_mustStop)
     {
         if(m_fifoSize == (uint64_t)-1)
@@ -116,7 +121,6 @@ void Router::broadCastNewLink(string destination, uint64_t updatedCost)
 
 void Router::routeAndForwardPacket(shared_ptr<Packet> packet)
 {
-    log("Routing a packet from " + packet->getSource() + " to " + packet->getDestination());
     auto destAddr = packet->getDestination();
     if(!m_routingTable.contains(destAddr))
     {

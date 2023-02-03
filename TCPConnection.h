@@ -52,9 +52,11 @@ class TCPConnection
     std::vector<shared_ptr<Packet>> m_inBuffer;
     uint64_t m_currentMessageSize = 0;
     uint64_t m_bytesReceivedSoFar = 0;
-    uint64_t m_numberOfTotalPackets;
+    uint64_t m_numberOfTotalPackets = 0;
     uint64_t m_receiverLastPacketAcked = 0;
 
+
+    string m_logFilename;
     std::mutex m_logLock;
     void log(const string& msg);
 public:

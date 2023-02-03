@@ -8,7 +8,7 @@ Host::duration Host::initRTT;
 Host::Host(const string &addr)
     : AbstractNode(addr), m_algController(NetworkController::getInstance())
 {
-
+    m_logFilename = "./log/Host:" + m_addr + ".txt";
 }
 
 void Host::addTcpConnection(const string &endPoint, duration initRTT)
@@ -23,7 +23,7 @@ void Host::addTcpConnection(const string &endPoint, duration initRTT)
 void Host::log(const string &msg)
 {
     std::scoped_lock<std::mutex> scopedLock(m_logLock);
-    std::ofstream logFile(string("HOST: ") + m_addr, std::ios_base::app);
+    std::ofstream logFile(m_logFilename, std::ios_base::app);
     logFile << msg << '\n';
     logFile.close();
 }
@@ -103,7 +103,7 @@ void Host::sendPacket(shared_ptr<Packet> packet)
 
 void Host::handlePacket(shared_ptr<Packet> packet)
 {
-    log("Handling a packet from " + packet->getSource());
+//    log("Handling a packet from " + packet->getSource() +);
     if(m_connections.contains(packet->getSource()))
         m_connections[packet->getSource()].takePacket(std::move(packet));
     else

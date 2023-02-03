@@ -89,8 +89,8 @@ void handleSet(std::stringstream& commandStream, Network& network)
     {
         if(propery == "delay")
             network.setRouterDelay(value);
-        else if(propery == "FIFO")
-            network.setRouterFifo(value);
+        else if(propery == "buffer")
+            network.setRouterBufferSize(value);
     }
 
 }
@@ -187,12 +187,6 @@ void runProgram()
 int main()
 {
     runProgram();
-    std::vector<char> v;
-    v.reserve(10);
-    std::cout << v.capacity() << std::endl;
-    v.push_back(9);
-    std::cout << v.capacity() << std::endl;
-
     return 0;
 }
 

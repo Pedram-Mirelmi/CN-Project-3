@@ -17,6 +17,8 @@ public:
     using duration = std::chrono::high_resolution_clock::duration;
     using time_point = std::chrono::high_resolution_clock::time_point;
     static duration initRTT;
+
+    string m_logFilename;
 public:
     Host(const string &addr);
     Host(const Host& other) = delete;
