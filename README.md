@@ -100,3 +100,68 @@ The challenge is where whenever we send a window size of packets and start a tim
     - Third if the flag is set to `true` we do the retransmittion and start another timeout and return.
 
 **Pay attention that anytime that an event means a congestion we call the `slowStartAgain()` and reset the `m_cwnd`, `m_ssthreash` and `m_lastPacketSent=m_lastPacketAcked` (the last one is for the GO-BACK-N algorithm)**
+
+
+
+# Simulations
+
+## Simulation #1 
+#### Parameters:
+- router FIFO buffer size = inf
+- packetsize = 10
+- router service delay per packet = 0
+- router drop rate = 0.0 (independent of full buffer)
+
+### Terminal:
+![](./Doc%20files/Simulation1-CMD-fifo%3Dinf%2Cpacketsize%3D10%2Cdelay%3D0.png)
+
+### Receiver log file: 
+
+**Time spent for receiver: 7,163,332,533 ns**
+
+
+![](./Doc%20files/Simulation1-RecvLog-fifo%3Dinf%2Cpacketsize%3D10%2Cdelay%3D0ms.png) 
+
+### Sender log file:
+
+**Time spend for sender: 7,178,081,435 ns**
+
+![](./Doc%20files/Simulation1-SendLog-fifo%3Dinf%2Cpacketsize%3D10%2Cdelay%3D0.png)
+
+### Diff:
+
+**All Ok!**
+
+![](./Doc%20files/Simulation1-Diff-fifo%3Dinf%2Cpacketsize%3D10%2Cdelay%3D0.png)
+
+
+## Simulation #2
+#### Parameters:
+- router FIFO buffer size = 5
+- packet size = 10
+- delay = 1ms
+- router drop rate = 0.1 (independent of full buffer)
+
+### Terminal
+![](./Doc%20files/Simulation2-CMD-fifo%3D5%2Cpacketsize%3D10%2Cdelay%3D1ms%2Cdrop-rate%3D0.1.png)
+
+### Receiver log file: 
+
+
+**Time spent for receiver: 60,655,557,265 ns**
+
+
+![](./Doc%20files/Simulation2-RecvLog-fifo%3D5%2Cpacketsize%3D10%2Cdelay%3D1ms%2Cdrop-rate%3D0.1.png)
+
+### Sender log file:
+
+**Time spent for sender: 60,679,495,256 ns**
+
+![](./Doc%20files/Simulation2-SendLog-fifo%3D5%2Cpacketsize%3D10%2Cdelay%3D1ms%2Cdrop-rate%3D0.1.png)
+
+### Diff
+
+**All Ok**
+
+![](./Doc%20files/Simulation2-Diff-fifo%3D5%2Cpacketsize%3D10%2Cdelay%3D1ms%2Cdrop-rate%3D0.1.png)
+
