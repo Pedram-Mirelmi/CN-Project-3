@@ -67,9 +67,36 @@ For the `Router` class we have:
 ## `NetworkController` a helper class
 
 The `NetworkController` is a helper singleton class that all nodes have access to its instance.
-The class provides a counter of the `RoutingMessages` in going in the network to keep track of the **Distance Vector** algorithm and figure out when it stops. How? just by keeping track of a simple counter `m_algConvergeCounter` that every node in the network can increment or decrement it in a **thread-safe** manner 
+The class provides a counter of the `RoutingMessages` in going in the network to keep track of the **Distance Vector** algorithm and figure out when it stops. How? just by keeping track of a simple counter `m_algConvergeCounter` that every node in the network can increment or decrement it in a **thread-safe** manner. Each router simply increments `n` time it whenever it broadcasts a link to `n` other nodes. And any other node decrement it at the **end** of processing a `RoutingMessage`
 
 Also when it comes to shutting down the network and nodes i similarily keep another counter `m_runningNodeCounter` to figure out when all nodes are off
 
 It also sets the timer when the algorithm is finishied by setting a timer whenever the counter reaches to zero.
 
+# Part 1: The TCP and Slow Start
+
+We gathered all the code needed for the TCP simulation and Slow Start algorithm in one class (`TCPConnection`)
+
+Each Host keeps a `std::unordered_map` to keep its connection with other hosts. we identify each connection with its other **end point**.
+
+Let's first take a look at the class
+
+## `TCPConnection` class
+
+From a threading point of view, at each time only two threads are running methods of this class.
+
+One is comming from the corresponding host that owns this connection and is dequeuing from its buffer constantly and hand it over to the connection object that will mainly call `handleData(packet)` method(if it's a receiver and the packet is not **Ack**) or `handleAck(packet)` method in case the connection is sender and the packet is an **Ack**.
+
+The other thread is the timeout thread that is on and running(`timeoutBody` method) most of the time.
+
+The complexity is when the connection is a sender. To avoid crashes due to race conditions and other problems due to multithreading we took a lock `m_connectionLock` and a flag `m_isTimeoutAllowed` 
+
+The challenge is where whenever we send a window size of packets and start a timeout and whenever we receiver every Ack of those packets we cancell the timeout and send the next window and start another timeout. The problem is where these two happens at the same time. To avoid this problem we lock the `m_connectionLock` in each 2 threads. 
+- In the **handleAck** case we check to see if the ack is the next "**not acked packet**". If so, we increment the `m_lastPacketAcked`, set the corresponding packet in buffer to `isAcked=true`, measure and estimate RTT, unlock the lock and exit. If not we do nothing. Also if the ack is for the last packet sent we cancell the timeout and send the next window size of packets and start another timeout. **Note that whenever we start a timeout we set `m_isTimeoutAllowed=true`**
+
+- For the **timeout** case, we actually have two things keeping timeout from retransmitting. 
+    - First the notifier that is just a blocking queue and we wait for some amount of time to dequeue and in case of failiar we pass. 
+    - Second we try to lock the `m_connectionLock` and then check the `m_isTimeoutAllowed` flag. Usually another threads holding the lock, sets this flag to `false` and releases the lock for a moment so the timeout doesn't retransmit and return from the function 
+    - Third if the flag is set to `true` we do the retransmittion and start another timeout and return.
+
+**Pay attention that anytime that an event means a congestion we call the `slowStartAgain()` and reset the `m_cwnd`, `m_ssthreash` and `m_lastPacketSent=m_lastPacketAcked` (the last one is for the GO-BACK-N algorithm)**
