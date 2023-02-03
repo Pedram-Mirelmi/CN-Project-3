@@ -53,7 +53,7 @@ void handleSend(std::stringstream& commandStream, Network& network)
 {
     using namespace std;
     string sender, toWord, receiver, filename;
-    size_t dummySize;
+    size_t dummySize, repeateDelay;
     commandStream >> sender >> toWord >> receiver >> filename;
     std::vector<char> dataBuffer;
     if(filename == "dummy")
@@ -61,7 +61,7 @@ void handleSend(std::stringstream& commandStream, Network& network)
         commandStream >> dummySize;
         dataBuffer.reserve(dummySize);
         for(size_t i = 0; i < dummySize; i++)
-            dataBuffer.push_back(i);
+            dataBuffer.push_back("0123456"[i%7]);
     }
     else
     {
@@ -72,10 +72,11 @@ void handleSend(std::stringstream& commandStream, Network& network)
             return;
         }
     }
+    commandStream >> repeateDelay;
     network.commandToSend(std::move(sender),
                           std::move(receiver),
                           std::move(dataBuffer),
-                          std::move(filename));
+                          repeateDelay);
 }
 
 void handleSet(std::stringstream& commandStream, Network& network)
@@ -83,7 +84,7 @@ void handleSet(std::stringstream& commandStream, Network& network)
     using namespace std;
     string nodeTypename, propery;
     uint64_t value;
-    cin >> nodeTypename >> propery >> value;
+    commandStream >> nodeTypename >> propery >> value;
     if(nodeTypename == "router")
     {
         if(propery == "delay")
@@ -185,8 +186,13 @@ void runProgram()
 
 int main()
 {
-//    runProgram();
-    std::cout << sizeof (void*) << std::endl;
+    runProgram();
+    std::vector<char> v;
+    v.reserve(10);
+    std::cout << v.capacity() << std::endl;
+    v.push_back(9);
+    std::cout << v.capacity() << std::endl;
+
     return 0;
 }
 

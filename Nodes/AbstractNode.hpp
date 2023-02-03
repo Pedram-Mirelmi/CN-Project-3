@@ -4,6 +4,9 @@
 #include <thread>
 #include "../concurrentqueue-master/blockingconcurrentqueue.h"
 #include "../Messages/Packet.h"
+
+#define print(x) std::cout << x << std::endl;
+
 using std::shared_ptr;
 
 class Router;
@@ -67,6 +70,7 @@ public:
     virtual void startNode() = 0;
     virtual void stopNode();
     virtual void clearQueue();
+    virtual void joinThread();
 
     virtual void addToRouterLink(shared_ptr<Router> router, uint64_t cost);
     virtual void addToHostLink(shared_ptr<Host> host, uint64_t cost);

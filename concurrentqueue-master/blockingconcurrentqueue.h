@@ -7,6 +7,13 @@
 
 #pragma once
 
+
+//////
+
+#include <iostream>
+
+///
+
 #include "concurrentqueue.h"
 #include "lightweightsemaphore.h"
 
@@ -380,6 +387,7 @@ public:
 			return false;
 		}
 		while (!inner.try_dequeue(item)) {
+            std::cout << "here" << timeout_usecs << std::endl;
 			continue;
 		}
 		return true;

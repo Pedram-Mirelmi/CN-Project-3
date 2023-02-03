@@ -73,7 +73,7 @@ public:
     void commandToSend(const string& sender,
                        const string& receiver,
                        const std::vector<char>& data,
-                       const string& filename);
+                       uint64_t repeateDelay);
 
     uint64_t findLinkCost(const string& addr1, const string& addr2);
 

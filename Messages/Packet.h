@@ -14,7 +14,7 @@ public:
     Packet(bool isAck, uint16_t id, const std::vector<char>& body, const std::string& source, const std::string& destination);
     Packet(bool isAck, uint16_t id, std::vector<char>&& body, const std::string& source, const std::string& destination);
 
-    const std::vector<char> &getBody() const;
+    std::vector<char> &getBody();
     void setBody(const std::vector<char> &newBody);
     void setBody(std::vector<char>&& newBody);
 

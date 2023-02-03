@@ -13,9 +13,14 @@ using std::make_shared;
 class Router : public AbstractNode
 {
     shared_ptr<NetworkController> m_algController;
-    std::chrono::duration<long, std::ratio<1, 1000000000>> m_nanosecDelay;
+    using duration = std::chrono::high_resolution_clock::duration;
+
+    duration m_nanosecDelay;
     std::mutex m_routerLock;
     uint64_t m_fifoSize = -1;
+public:
+    static duration defaultRouterDelay;
+    static uint64_t defaultFifoSize;
 public:
     Router(const string &addr);
     Router(const Router& other) = delete;

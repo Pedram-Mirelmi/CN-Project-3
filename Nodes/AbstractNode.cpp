@@ -34,6 +34,11 @@ void AbstractNode::clearQueue()
     m_nodeQueue = moodycamel::BlockingConcurrentQueue<shared_ptr<AbstractNetMessage>>(m_nodeQueue.size_approx());
 }
 
+void AbstractNode::joinThread()
+{
+    m_thread.join();
+}
+
 void AbstractNode::addToRouterLink(shared_ptr<Router> router, uint64_t cost)
 {
     m_toRoutersLinks[router->getAddr()] = {router, cost};

@@ -22,12 +22,14 @@ public:
     Host(const Host& other) = delete;
     Host& operator=(const Host& other) = delete;
 
+    void addTcpConnection(const string& endPoint, duration initRTT);
 
     // AbstractNode interface
 public:
     void startNode() override;
+    void stopNode() override;
     NodeType getType() override;
-    void sendMessageTo(const string& receiver, const std::vector<char>& data);
+    void sendMessageTo(const string& receiver, const std::vector<char>& data, uint64_t repeateDelay);
 private:
     void handleNewMessage(shared_ptr<AbstractNetMessage> message);
     void handlePacket(shared_ptr<Packet> packet);

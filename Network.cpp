@@ -76,7 +76,7 @@ void Network::temporarilyDownLink(const string &addr1, const string &addr2, uint
     {
         DownLinkTask task;
         task.startTime = std::chrono::system_clock::now();
-        task.sleepingThread = std::thread([=]
+        task.sleepingThread = std::thread([this, addr1, addr2, downTimeFromNow, UpTimeFromDownTime, cost]
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(downTimeFromNow));
             removeLink(addr1, addr2);
@@ -119,6 +119,11 @@ void Network::shutDown()
         pair.second->clearQueue();
     for(auto& pair : m_routers)
         pair.second->clearQueue();
+
+    for(auto& pair : m_hosts)
+        pair.second->joinThread();
+    for(auto& pair : m_routers)
+        pair.second->joinThread();
 
     std::cout << "Network shut down" << std::endl;
 
@@ -177,12 +182,20 @@ void Network::printTable(const AbstractNode::RoutingTable_t &table)
     std::cout << "=======================================================" << std::endl;
 }
 
-void Network::commandToSend(const string &sender, const string &receiver, const std::vector<char> &data, const string &filename)
+void Network::commandToSend(const string &sender,
+                            const string &receiver,
+                            const std::vector<char> &data,
+                            uint64_t repeateDelay)
 {
     if(m_hosts.contains(sender) && m_hosts.contains(receiver))
     {
         auto senderNode = m_hosts[sender];
-        senderNode->sendMessageTo(receiver, data);
+        auto receiverNode = m_hosts[receiver];
+
+        senderNode->addTcpConnection(receiver, std::chrono::nanoseconds(5*Router::defaultFifoSize*Router::defaultRouterDelay.count()));
+        receiverNode->addTcpConnection(sender, std::chrono::nanoseconds(5*Router::defaultFifoSize*Router::defaultRouterDelay.count()));
+
+        senderNode->sendMessageTo(receiver, data, repeateDelay);
     }
     else
     {
@@ -214,15 +227,17 @@ uint64_t Network::findLinkCost(const string &addr1, const string &addr2)
 
 void Network::setRouterDelay(u_int64_t nanoseconds)
 {
+    Router::defaultRouterDelay = std::chrono::nanoseconds(nanoseconds);
     for(auto& router : m_routers)
         router.second->setDelay(nanoseconds);
 }
 
-void Network::setRouterFifo(u_int16_t length)
+void Network::setRouterFifo(u_int16_t size)
 {
+    Router::defaultFifoSize = size;
     shutDown();
     for(auto& router : m_routers)
-        router.second->setFifoSize(length);
+        router.second->setFifoSize(Router::defaultFifoSize);
     run();
 }
 

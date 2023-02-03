@@ -11,7 +11,7 @@ class NetworkController
     static shared_ptr<NetworkController> instance;
     NetworkController();
 private:
-    uint64_t m_algConvergecounter = 0, m_runningNodeCounter = 0;
+    uint64_t m_algConvergeCounter = 0, m_runningNodeCounter = 0;
     mutable std::mutex m_algConvergerCounterLock, m_runningNodeCounterLock;
 
     time_point m_startTime, m_endTime;

@@ -45,7 +45,7 @@ void Packet::switchAddresses()
     std::swap(m_source, m_destination);
 }
 
-const std::vector<char> &Packet::getBody() const
+std::vector<char> &Packet::getBody()
 {
     return m_body;
 }

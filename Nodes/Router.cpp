@@ -1,6 +1,12 @@
 #include <iostream>
 #include "Router.hpp"
 #include "Host.hpp"
+
+
+
+Router::duration Router::defaultRouterDelay = Router::duration(0);
+uint64_t Router::defaultFifoSize = 5;
+
 Router::Router(const string &addr) :
     AbstractNode(addr), m_algController(NetworkController::getInstance())
 {
@@ -26,7 +32,7 @@ void Router::startNode()
         }
         m_mustStop = false;
         m_isRunning = false;
-        m_algController->decConvergeCounter();
+        m_algController->decRunningNodeCounter();
     });
 }
 
@@ -122,7 +128,7 @@ void Router::setDelay(uint64_t nanosecends)
 
 void Router::setFifoSize(u_int64_t size)
 {
-    if(size == -1)
+    if(size == (uint64_t)-1)
         m_fifoSize = size;
     else
         m_nodeQueue = moodycamel::BlockingConcurrentQueue<shared_ptr<AbstractNetMessage>>(size);
